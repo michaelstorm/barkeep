@@ -23,14 +23,6 @@ describe "search query parser", ->
       unrelatedPrefix: "foo:bar ",
       searchType: "key"
 
-  it "should ignore extra colons afterwards", ->
-    expect(@parse("foo:bar:baz")["foo"]).toEqual "bar:baz"
-    expect(@parsePartialQuery("foo:bar:baz")).toEqual
-      key: "foo:bar:",
-      value: "baz",
-      unrelatedPrefix: "foo:bar:",
-      searchType: "value"
-
   it "should parse an empty key to path", ->
     expect(@parse(":foo")["paths"]).toEqual(["foo"])
 
@@ -99,3 +91,15 @@ describe "search query parser", ->
   it "should allow for some synonyms instead of the intended keywords", ->
     for keyword, synonym of { branches: "branch", authors: "author", repos: "repo" }
       expect(@parse("#{synonym}: foobar")[keyword]).toEqual "foobar"
+
+  it "should correctly parse quoted author names", ->
+    expect(@parse("authors:\"Nicolas\"")["authors"]).toEqual "Nicolas"
+
+  it "should correctly parse quoted author names containing spaces", ->
+    expect(@parse("authors:\"Nicolas Cage\"")["authors"]).toEqual "Nicolas Cage"
+
+  it "should correctly parse multiple quoted author names", ->
+    expect(@parse("authors:\"Nicolas Cage\",\"Betty White\"")["authors"]).toEqual "Nicolas Cage,Betty White"
+
+  it "should correctly parse quoted and non-quoted author names together", ->
+    expect(@parse("authors:\"Nicolas Cage\",Prince,\"Betty White\"")["authors"]).toEqual "Nicolas Cage,Prince,Betty White"

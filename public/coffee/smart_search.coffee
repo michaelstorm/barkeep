@@ -86,10 +86,11 @@ class window.SmartSearch
 
   # suggests values see autocomplete
   autocompleteValue: (incompleteValue, key, unrelatedPrefix, onSuggestionReceived) ->
+    incompleteValue = incompleteValue.replace("\"", "")
     if key in ["authors:", "repos:"]
       # regex to get value out of full label
       valueRegex = /^.*$/
-      valueRegex = /<.*>/ if key == "authors:"
+      valueRegex = /^(.*)\s+<.*>$/ if key == "authors:"
 
       $.ajax
         type: "get"
@@ -98,7 +99,14 @@ class window.SmartSearch
         dataType: "json"
         success: (completion) =>
           fullValues = $.map completion.values, (x) ->
-            {"label" : x, "value" : unrelatedPrefix + (valueRegex.exec(x)[0] || "")}
+            if key == "authors:"
+              suggestion = valueRegex.exec(x)[1]
+              if suggestion? and suggestion.indexOf(" ") != -1
+                {"label" : x, "value" : unrelatedPrefix + "\"#{suggestion}\""}
+              else
+                {"label" : x, "value" : unrelatedPrefix + (suggestion || "")}
+            else
+              {"label" : x, "value" : unrelatedPrefix + (valueRegex.exec(x)[0] || "")}
           @showTabCompleteHint(incompleteValue, fullValues)
           onSuggestionReceived(fullValues)
         error: -> onSuggestionReceived ""
@@ -107,6 +115,7 @@ class window.SmartSearch
   showTabCompleteHint: (incompleteTerm, suggestions) ->
     hint = value = ""
     if incompleteTerm
+      incompleteTerm = incompleteTerm.replace("\"", "")
       # Get the first autocomplete suggestion that starts with the search term (case insensitive). If one
       # doesn't exist, don't offer a hint.
       re = new RegExp("^" + Util.escapeRegex(incompleteTerm), "i")
@@ -182,7 +191,15 @@ class window.SmartSearch
             currentKey = chunk.slice(0, splitPoint)
             emitChunk(chunk.slice(splitPoint + 1))
 
-    emitChunk(chunk) for chunk in searchString.split(/\s+/)
+    matchString = searchString
+    while (result = /\s*(?:"(.*?)",?|([^\s,:]*:?)),?/.exec matchString)[0].length != 0
+      chunk = if result[1]? then result[1] else result[2]
+      # an ending comma won't be captured, since it's outside the quotation marks, so we
+      # re-add it here
+      if result[0][result[0].length - 1] == ","
+        chunk += ","
+      emitChunk(chunk)
+      matchString = matchString.substring(result.index + result[0].length, matchString.length)
 
     # Take care of un-emmitted key/value pair (this happens when you have a trailing comma).
     if currentKey?
