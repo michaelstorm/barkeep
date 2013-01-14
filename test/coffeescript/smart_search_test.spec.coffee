@@ -94,12 +94,67 @@ describe "search query parser", ->
 
   it "should correctly parse quoted author names", ->
     expect(@parse("authors:\"Nicolas\"")["authors"]).toEqual "Nicolas"
+    expect(@parsePartialQuery("authors:\"Nicolas\"")).toEqual
+      key: "authors:"
+      value: "\"Nicolas\""
+      unrelatedPrefix: "authors:"
+      searchType: "value"
 
   it "should correctly parse quoted author names containing spaces", ->
     expect(@parse("authors:\"Nicolas Cage\"")["authors"]).toEqual "Nicolas Cage"
+    expect(@parsePartialQuery("authors:\"Nicolas Cage\"")).toEqual
+      key: "authors:"
+      value: "\"Nicolas Cage\""
+      unrelatedPrefix: "authors:"
+      searchType: "value"
 
   it "should correctly parse multiple quoted author names", ->
     expect(@parse("authors:\"Nicolas Cage\",\"Betty White\"")["authors"]).toEqual "Nicolas Cage,Betty White"
+    expect(@parsePartialQuery("authors:\"Nicolas Cage\",\"Betty White\"")).toEqual
+      key: "authors:"
+      value: "\"Betty White\""
+      unrelatedPrefix: "authors:\"Nicolas Cage\","
+      searchType: "value"
 
   it "should correctly parse quoted and non-quoted author names together", ->
     expect(@parse("authors:\"Nicolas Cage\",Prince,\"Betty White\"")["authors"]).toEqual "Nicolas Cage,Prince,Betty White"
+    expect(@parsePartialQuery("authors:\"Nicolas Cage\",Prince,\"Betty White\"")).toEqual
+      key: "authors:"
+      value: "\"Betty White\""
+      unrelatedPrefix: "authors:\"Nicolas Cage\",Prince,"
+      searchType: "value"
+
+  it "should correctly parse unmatched-quoted author names", ->
+    expect(@parsePartialQuery("authors:\"Nicolas")).toEqual
+      key: "authors:"
+      value: "\"Nicolas"
+      unrelatedPrefix: "authors:"
+      searchType: "value"
+
+  it "should correctly parse unmatched-quoted author names ending with a space", ->
+    expect(@parsePartialQuery("authors:\"Nicolas ")).toEqual
+      key: "authors:"
+      value: "\"Nicolas "
+      unrelatedPrefix: "authors:"
+      searchType: "value"
+
+  it "should correctly parse unmatched-quoted author names containing a space", ->
+    expect(@parsePartialQuery("authors:\"Nicolas Cage")).toEqual
+      key: "authors:"
+      value: "\"Nicolas Cage"
+      unrelatedPrefix: "authors:"
+      searchType: "value"
+
+  it "should correctly parse unmatched-quoted author names preceded by another quoted author name", ->
+    expect(@parsePartialQuery("authors:\"Nicolas Cage\",\"Betty White")).toEqual
+      key: "authors:"
+      value: "\"Betty White"
+      unrelatedPrefix: "authors:\"Nicolas Cage\","
+      searchType: "value"
+
+  it "should correctly parse unmatched-quoted author names preceded by another key with a quoted value", ->
+    expect(@parsePartialQuery("authors:\"Betty White\" authors:\"Nicolas Cage")).toEqual
+      key: "authors:"
+      value: "\"Nicolas Cage"
+      unrelatedPrefix: "authors:\"Betty White\" authors:"
+      searchType: "value"

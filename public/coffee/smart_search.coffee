@@ -46,6 +46,16 @@ class window.SmartSearch
     # slice to focus on the last term
     currentTerm = ""
     lastTermSeparator = searchString.lastIndexOf(" ")
+    matchString = searchString.slice(0, lastTermSeparator)
+    # if the number of quotation marks is odd, then the last space is part of an unterminated quoted string
+    while (matchString.match(/"/g)||[]).length % 2 == 1
+      lastTermSeparator = matchString.lastIndexOf(" ")
+      if lastTermSeparator >= 0
+        matchString = matchString.slice(0, lastTermSeparator)
+      else
+        lastTermSeparator = -1
+        break
+
     if lastTermSeparator >= 0
       result.unrelatedPrefix = searchString.slice(0, lastTermSeparator+1)
       currentTerm = searchString.slice(lastTermSeparator+1)
@@ -87,10 +97,10 @@ class window.SmartSearch
   # suggests values see autocomplete
   autocompleteValue: (incompleteValue, key, unrelatedPrefix, onSuggestionReceived) ->
     incompleteValue = incompleteValue.replace("\"", "")
-    if key in ["authors:", "repos:"]
+    if key in ["authors:", "author:", "repos:", "repo:"]
       # regex to get value out of full label
       valueRegex = /^.*$/
-      valueRegex = /^(.*)\s+<.*>$/ if key == "authors:"
+      valueRegex = /^(.*)\s+<.*>$/ if key == "authors:" || key == "author:"
 
       $.ajax
         type: "get"
@@ -99,7 +109,7 @@ class window.SmartSearch
         dataType: "json"
         success: (completion) =>
           fullValues = $.map completion.values, (x) ->
-            if key == "authors:"
+            if key == "authors:" || key == "author:"
               suggestion = valueRegex.exec(x)[1]
               if suggestion? and suggestion.indexOf(" ") != -1
                 {"label" : x, "value" : unrelatedPrefix + "\"#{suggestion}\""}
