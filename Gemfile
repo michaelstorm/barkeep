@@ -21,6 +21,8 @@ gem "bourbon"
 # For JS minification
 gem "uglifier"
 
+gem "libv8", "= 3.16.14.4" # there are problems installing 3.16.15 on Mavericks
+
 # We're pulling in our own grit fork with bugfixes.
 gem "grit", :git => "http://github.com/ooyala/grit.git", :ref => "38d0e6660b78bff97499280fae09a78b087c50b4"
 gem "json"
