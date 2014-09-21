@@ -5,6 +5,8 @@ require "bourbon"
 require "coffee-script"
 require "methodchain"
 require "nokogiri"
+require "omniauth"
+require "omniauth-github"
 require "open-uri"
 require "openid"
 require "openid/extensions/ax"
@@ -204,6 +206,11 @@ class BarkeepServer < Sinatra::Base
          get_openid_login_redirect(OPENID_PROVIDERS_ARRAY.first) :
         "/signin/select_openid_provider")
     end
+  end
+
+  use Rack::Session::Cookie
+  use OmniAuth::Builder do
+    provider :github, ENV['GITHUB_CLIENT_ID'], ENV['GITHUB_SECRET']
   end
 
   get("/favicon.ico") { redirect asset_url("favicon.ico") }
